@@ -2,15 +2,20 @@
 #################################################
 ## Balance Statistics Output with Plots
 ## Mark Huberty
-## 19 March 2009
-## v0.2
+## 10 January 2010
+## v0.3
 
-## This function provides a one-line input to create plots of the balance statistics (p-values for the t-test for difference in means, and the ks statistic for difference in distributions) for the output of the MatchBalance function in the Matching() package for R. 
+## This code provides two functions to generate tables and plots of the balance statistics
+## (p-values for the t-test for difference in means, and the ks statistic for difference in distributions)
+## for the output of the MatchBalance function in the Matching() package for R. 
 
-## This function combines code from the Balance Statistics functions written by Charlie Gibbons (http://cgibbons.berkeley.edu/Courses/PS236_F08/balanceTable.r) and the balance statistics plotting functions written by Rocio Titiunik (http://are.berkeley.edu/~rocio/R/graph.pval.public.R). The changes here are to make those two functions cooperate.
+## This function combines code from the Balance Statistics functions written by Charlie Gibbons (http://cgibbons.berkeley.edu/Courses/PS236_F08/balanceTable.r)
+## and the balance statistics plotting functions written by Rocio Titiunik (http://are.berkeley.edu/~rocio/R/graph.pval.public.R).
+## The changes here are to make those two functions cooperate and enhance their error handling and flexibility.
 
 ## BETA.
 ## v0.2 corrected for column mismatch that made means incorrect.
+## v0.3 added error handling and optional inclusion of post-matching means
 
 #################################################
 #################################################
