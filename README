@@ -1,0 +1,5 @@
+This code produces both tables and figures for the output of the MatchBalance() routine in the Matching() package for R. More information on Matching() can be found at http://sekhon.berkeley.edu/matching/. The code draws on earlier work by Rocio Titiunik and Charlie Gibbons. 
+
+Documentation of the arguments passed to both functions can be found in the comments. 
+
+Questions or bugs should be forwarded to mark.huberty@gmail.com.
