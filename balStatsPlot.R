@@ -291,8 +291,8 @@ plot.pval <- function(covariates,
   # Add legend
   if(legend==TRUE)
     legend(x=-1,y=0.5,
-           c(colnames(results)[3:4],
-             colnames(results)[7:8]
+           c(colnames(results)[t.cols],
+             colnames(results)[ks.cols]
              ),
            pch=pchset, pt.bg = pchbgcol,
            cex=0.8, ncol=2, xpd=NA
