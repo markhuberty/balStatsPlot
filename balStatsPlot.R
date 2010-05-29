@@ -3,7 +3,7 @@
 ## Balance Statistics Output with Plots
 ## Mark Huberty
 ## 10 January 2010
-## v0.3
+## v0.4
 
 ## This code provides two functions to generate tables and plots of the balance statistics
 ## (p-values for the t-test for difference in means, and the ks statistic for difference in distributions)
@@ -16,6 +16,9 @@
 ## BETA.
 ## v0.2 corrected for column mismatch that made means incorrect.
 ## v0.3 added error handling and optional inclusion of post-matching means
+## v0.4 updates the error handling and does some re-formatting to make the code easier to read
+
+## TO DO: Provide options for inclusion of t-statistics and p-values (i.e., pval=TRUE, tstat=TRUE) for the matrix function
 
 #################################################
 #################################################
@@ -60,26 +63,52 @@
 ###############################################
 
 
-  balanceMat <- function(cov, bal.out,  means=TRUE){
+  balanceMat <- function(cov,
+                         bal.out,
+                         means=TRUE
+                         ){
 
     # Check to make sure that the data is in the right format
     dtype <- class(cov)
-    if(dtype!="character"&dtype!="matrix"&dtype!="data.frame") {return("Error: Covariate names must be supplied as a character vector, or matrix or data frame with column names.")}
+    if(dtype!="character"&dtype!="matrix"&dtype!="data.frame")
+      {stop("Covariate names must be supplied as a character vector, or matrix or data frame with column names.")}
          
     
-   if(dtype=="matrix"){if(dim(cov)[2]!=length(bal.out$AfterMatching[])){return("Error: Rowcount for the covariate matrix does not equal the covariate count from MatchBalance")}}
-   else if(dtype=="data.frame"){if(dim(cov)[2]!=length(bal.out$AfterMatching[])){return("Error: Rowcount for the covariate data frame does not equal the covariate count from MatchBalance")}}
-   else if(dtype=="character"){if(length(cov)!=length(bal.out$AfterMatching[])){return("Error: List of covariate names is not the same length as the list of covariates.")}}
-    #else{}
+    if(dtype=="matrix")
+      {
+        if(dim(cov)[2]!=length(bal.out$AfterMatching[]))
+          {
+            stop("Rowcount for the covariate matrix does not equal the covariate count from MatchBalance")
+         }
+      }
+    if(dtype=="data.frame")
+      {
+        if(dim(cov)[2]!=length(bal.out$AfterMatching[]))
+          {
+            stop("Rowcount for the covariate data frame does not equal the covariate count from MatchBalance")
+          }
+      }
+    if(dtype=="character"){
+      if(length(cov)!=length(bal.out$AfterMatching[]))
+        {
+          stop("List of covariate names is not the same length as the list of covariates.")
+        }
+    }
+
+    
   
                                       
     # Calculate the number of covariates
     n <- ifelse(dtype=="matrix"| dtype=="data.frame", dim(cov)[2], length(cov))
 
     # Determine how the covariate names are provided, and then grab them
-    if(dtype=="matrix"|dtype=="data.frame") rnames <- dimnames(cov)[[2]] else
-    if(dtype=="character") rnames <- cov
-
+    if(dtype=="matrix"|dtype=="data.frame")
+      {
+        rnames <- dimnames(cov)[[2]]
+      }else{
+        if(dtype=="character") rnames <- cov
+      }
+    
     # Construct the matrix of statistics from the MatchBalance data and attach it to the covariate names
     z <- t(sapply(1:n, function(x){
       c(rnames[x],
@@ -92,68 +121,99 @@
         ifelse(is.null(bal.out$BeforeMatching[[x]]$ks$ks.boot.pvalue) ==
                0,round(bal.out$BeforeMatching[[x]]$ks$ks.boot.pvalue,2),
                NA),
-        
         ifelse(is.null(bal.out$AfterMatching[[x]]$ks$ks.boot.pvalue) ==
                0, round(bal.out$AfterMatching[[x]]$ks$ks.boot.pvalue,2),
-               NA))
-    }))
+               NA)
+        )
+    }
+                  )
+           )
+    
     z <- as.data.frame(z)
-    #return(z)
+    print(z)
     
     z[,2:9] <- apply(z[,2:9], 2, function(x){as.numeric(x)})
 
     ## Determine if means should be included in the matrix
     ## and format appropriately.
     if(means==TRUE){
-    mat <- z[,2:9]
+      mat <- z[,2:9]
+      
+      ## Apply the correct column names
+      names(mat)<- c("Mean Tr.",
+                     "Mean Con.",
+                     "BM t p-value",
+                     "AM t p-value",
+                     "BM t stat",
+                     "AM t stat",
+                     "BM KS p-value",
+                     "AM KS p-value")
+      ## Apply the correct row names
+      dimnames(mat)[[1]] <- z[,1]
+      print(mat)
 
-    # Apply the correct column names
-    names(mat)<- c("Mean Tr.",
-                   "Mean Con.",
-                   "BM t p-value",
-                   "AM t p-value",
-                   "BM t stat",
-                   "AM t stat",
-                   "BM KS p-value",
-                   "AM KS p-value")
-    # Apply the correct row names
-    dimnames(mat)[[1]] <- z[,1]
-    mat
-
-  }else{
-    mat <- z[,4:9]
-
-    # Apply the correct column names
-    names(mat)<- c("BM t p-value",
-                   "AM t p-value",
-                   "BM t stat",
-                   "AM t stat",
-                   "BM KS p-value",
-                   "AM KS p-value")
-    # Apply the correct row names
-    dimnames(mat)[[1]] <- z[,1]
-    mat
-  }
+      mat
+    }else{
+      mat <- z[,4:9]
+      
+      ## Apply the correct column names
+      names(mat)<- c("BM t p-value",
+                     "AM t p-value",
+                     "BM t stat",
+                     "AM t stat",
+                     "BM KS p-value",
+                     "AM KS p-value")
+      ## Apply the correct row names
+      dimnames(mat)[[1]] <- z[,1]
+      mat
+    }
 
     
-  }
+  } ## end balanceMat()
  
 
-plot.pval <- function(covariates, bal.out, title=NULL, means=TRUE, color=TRUE, legend=TRUE,legendx=0.15,legendy=2.2, textsize=0.9, parcex=0.8, at1=-0.35, at2=-0.15, at3=-0.9,xlim1=-0.85) {
+plot.pval <- function(covariates,
+                      bal.out,
+                      title=NULL,
+                      means=TRUE,
+                      color=TRUE,
+                      legend=TRUE,
+                      legendx=0.15,
+                      legendy=2.2,
+                      textsize=0.9,
+                      parcex=0.8,
+                      at1=-0.35,
+                      at2=-0.15,
+                      at3=-0.9,
+                      xlim1=-0.85
+                      ) {
 
 
-  # Take the function above and apply it to the data supplied in the command
-  # Note that here means is always FALSE to ensure correct formatting of the output data
-  # Means in the input to plot.pval only controls what's output to the plot
-  results <- balanceMat(covariates, bal.out, means=FALSE)
-  #return(results)
-  # set values of different parameters
+  ## Take the function above and apply it to the data supplied in the command
+  ## Note that here means is always FALSE to ensure correct formatting of the output data
+  ## 'means' in the input to plot.pval only controls what's output to the plot
+  results <- balanceMat(covariates, bal.out, means=means)
+
+  print(results)
+  ##return(results)
+
+  ## set values of different parameters
   xlim = c(xlim1,1)
   pchset = c(21,24,22,23)
   
-  # Set the colors of the data points, if color is TRUE. If color is false, then the points are differentiated by whether they are colored in.
-  if(color==TRUE) {pchcol = c("blue","red", "yellow", "darkgreen")} else{pchcol=c("black", "black", "black", "black")}
-  if(color==TRUE) {pchbgcol = c("blue","red", "yellow", "darkgreen")} else{pchbgcol=c("white", "white", "black", "black")}
+  ## Set the colors of the data points, if color is TRUE. If color is false, then the points are differentiated by whether they are colored in.
+  if(color==TRUE)
+    {
+      pchcol = c("blue","red", "yellow", "darkgreen")
+    }else{
+      pchcol=c("black", "black", "black", "black")
+    }
+  if(color==TRUE)
+    {
+      pchbgcol = c("blue","red", "yellow", "darkgreen")
+    }else{
+      pchbgcol=c("white", "white", "black", "black")
+    }
 
 
   # set margins and letter size
@@ -163,8 +223,10 @@ plot.pval <- function(covariates, bal.out, title=NULL, means=TRUE, color=TRUE, l
   ny = nrow(results)
 
   # create the empty figure
-  if(!is.null(title))  plot(x=NULL,axes=F, xlim=xlim, ylim=c(1,ny),xlab="",ylab="", main=title)
-  if(is.null(title))   plot(x=NULL,axes=F, xlim=xlim, ylim=c(1,ny),xlab="",ylab="")
+  if(!is.null(title))
+    plot(x=NULL,axes=F, xlim=xlim, ylim=c(1,ny),xlab="",ylab="", main=title)
+  if(is.null(title))
+    plot(x=NULL,axes=F, xlim=xlim, ylim=c(1,ny),xlab="",ylab="")
   
   # add the 0, 0.05 and 0.1 vertical lines
   abline(v=c(0,0.05,0.1),lty=c(1,4,4), lwd=c(1,2,2))
@@ -172,29 +234,70 @@ plot.pval <- function(covariates, bal.out, title=NULL, means=TRUE, color=TRUE, l
 
   # add labels on top of the three areas of the graph. Only add the means if desired
   # Can be useful to omit the means if the available plotting space is limited
-  if(means==TRUE) axis(side=3,at=at1,labels="Mean\nTreated",tick=FALSE, padj=0.5,cex.axis=textsize)
-  if(means==TRUE) axis(side=3,at=at2,labels="Mean\nControl",tick=FALSE, padj=0.5,cex.axis=textsize)
+  if(means==TRUE)
+    axis(side=3,at=at1,labels="Mean\nTreated",tick=FALSE, padj=0.5,cex.axis=textsize)
+  if(means==TRUE)
+    axis(side=3,at=at2,labels="Mean\nControl",tick=FALSE, padj=0.5,cex.axis=textsize)
+
   axis(side=3,at=0.5,labels="P-values",tick=FALSE, padj=0.5,cex.axis=textsize)
 
   # Fill the figure with the information which is inside the 'results' matrix
   ## Add the p-values of the t-statistics as points
-  for(i in 3:4) points(results[,i],ny:1, pch = pchset[i-3+1], col = pchcol[i-3+1], bg = pchbgcol[i-3+1])
+  if(means){
+    t.cols <- c(3,4)
+    ks.cols <- c(7,8)
+  }else{
+    t.cols <- c(1,2)
+    ks.cols <- c(5,6)
+  }
+  
+  print(t.cols)
+  print(ks.cols)
+  
+  for(i in t.cols){
+    points(results[,i],
+           ny:1,
+           pch = pchset[i-min(t.cols)+1],
+           col = pchcol[i-min(t.cols)+1],
+           bg = pchbgcol[i-min(t.cols)+1]
+           )
+  }
   ## Add the p-values of the ks statistics as points
-  for(i in 7:8) points(results[,i],ny:1, pch = pchset[i-5+1], col = pchcol[i-5+1], bg = pchbgcol[i-5+1])
+  for(i in ks.cols){
+    points(results[,i],
+           ny:1,
+           pch = pchset[i-min(ks.cols)+3],
+           col = pchcol[i-min(ks.cols)+3],
+           bg = pchbgcol[i-min(ks.cols)+3]
+           )
+  }
 
-      
+  print("Points plotting successful")
+
+  print(dimnames(results))
   # Second, add each variable name and the means for treated and control
   for(i in 1:ny) {
     text(at3,ny-i+1,dimnames(results)[[1]][i],adj = 0,cex=textsize) # variable name
-    if(means==TRUE) text(at1,ny-i+1,results[i,1], cex=textsize)        # treatment mean
-    if(means==TRUE) text(at2,ny-i+1,results[i,2], cex=textsize)        # control mean
+    if(means==TRUE)
+      text(at1,ny-i+1,results[i,1], cex=textsize)        # treatment mean
+    if(means==TRUE)
+      text(at2,ny-i+1,results[i,2], cex=textsize)        # control mean
   }
 
   # Add dotted horizontal lines every two variables to make it prettier
-  for(i in seq(2,by=2,length.out=floor((ny-1)/2))) abline(h = i+0.5, lty = 3)
+  for(i in seq(2,by=2,length.out=floor((ny-1)/2)))
+    abline(h = i+0.5, lty = 3)
 
   # Add legend
-  if(legend==TRUE) legend(x=-1,y=-1, c(colnames(results)[3:4], colnames(results)[7:8]), pch=pchset, pt.bg = pchbgcol, cex=0.8, ncol=2, xpd=NA)
+  if(legend==TRUE)
+    legend(x=-1,y=0.5,
+           c(colnames(results)[3:4],
+             colnames(results)[7:8]
+             ),
+           pch=pchset, pt.bg = pchbgcol,
+           cex=0.8, ncol=2, xpd=NA
+           )
+  
 }
 
 
@@ -203,4 +306,5 @@ plot.pval <- function(covariates, bal.out, title=NULL, means=TRUE, color=TRUE, l
 #########################################
 
 ## USE
+## source(balStatsPlot.R)
 ## plot.pval(covariates, bal.out, title="")
