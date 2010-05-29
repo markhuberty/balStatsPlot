@@ -130,7 +130,7 @@
            )
     
     z <- as.data.frame(z)
-    print(z)
+    ## print(z)
     
     z[,2:9] <- apply(z[,2:9], 2, function(x){as.numeric(x)})
 
@@ -150,7 +150,7 @@
                      "AM KS p-value")
       ## Apply the correct row names
       dimnames(mat)[[1]] <- z[,1]
-      print(mat)
+      ## print(mat)
 
       mat
     }else{
@@ -194,7 +194,7 @@ plot.pval <- function(covariates,
   ## 'means' in the input to plot.pval only controls what's output to the plot
   results <- balanceMat(covariates, bal.out, means=means)
 
-  print(results)
+  ##print(results)
   ##return(results)
 
   ## set values of different parameters
@@ -251,8 +251,8 @@ plot.pval <- function(covariates,
     ks.cols <- c(5,6)
   }
   
-  print(t.cols)
-  print(ks.cols)
+  #print(t.cols)
+  #print(ks.cols)
   
   for(i in t.cols){
     points(results[,i],
@@ -272,9 +272,9 @@ plot.pval <- function(covariates,
            )
   }
 
-  print("Points plotting successful")
+  #print("Points plotting successful")
 
-  print(dimnames(results))
+  #print(dimnames(results))
   # Second, add each variable name and the means for treated and control
   for(i in 1:ny) {
     text(at3,ny-i+1,dimnames(results)[[1]][i],adj = 0,cex=textsize) # variable name
